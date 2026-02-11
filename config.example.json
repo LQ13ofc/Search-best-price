@@ -1,0 +1,6 @@
+{
+  "serpapi_key": "",
+  "theme": "dark",
+  "check_interval": 1800,
+  "cache_ttl": 3600
+}
