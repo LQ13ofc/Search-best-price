@@ -2,6 +2,27 @@
 
 ## App não abre / Não acontece nada
 
+### Erro: "Tab.__init__() got an unexpected keyword argument 'text'"
+
+**Causa:** Versão antiga do Flet instalada
+
+**Solução:**
+```bash
+pip install --upgrade flet
+```
+
+Ou reinstale tudo:
+```bash
+pip install --upgrade -r requirements.txt
+```
+
+**Verificar versão:**
+```bash
+pip show flet
+```
+
+Deve ser 0.24.0 ou superior.
+
 ### Verificar se Python está instalado
 
 ```bash

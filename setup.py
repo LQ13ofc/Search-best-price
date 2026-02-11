@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="cacador-precos",
-    version="5.0.0",
+    version="5.0.3",
     author="Seu Nome",
     author_email="seu@email.com",
     description="Compare preços entre Mercado Livre e Google Shopping",
@@ -29,7 +29,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "cacador-precos=main:main",
+            "cacador-precos=main:run_app",
         ],
     },
 )

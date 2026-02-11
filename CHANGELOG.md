@@ -1,146 +1,106 @@
-# 📋 Changelog - Caçador de Preços
+# Changelog
 
-Todas as mudanças notáveis neste projeto serão documentadas aqui.
+## [5.0.3] - 2024-02-11
 
----
+### 🔧 Correção de Compatibilidade - Flet 0.80.0+
 
-## [5.0.0] - 2024-02-11 - 🔥 ULTIMATE EDITION
+- **API atualizada**: Migrado de `ft.app()` para `ft.run()`
+- **Ícones**: Corrigido `ft.Icons` para `ft.icons` (minúsculo)
+- **Tabs**: Sintaxe correta para Flet versões mais recentes
+- **Compatibilidade**: Testado com Flet 0.24.x até 0.80.x+
 
-### ✨ Novidades
+### ⚡ Melhorias
 
-#### Sistema de Alertas de Preço
-- ✅ Configure alertas personalizados para produtos favoritos
-- ✅ Notificações automáticas quando preço baixar
-- ✅ Verificação em background a cada 30 minutos
-- ✅ Ativar/desativar alertas individualmente
-- ✅ Interface dedicada para gerenciar alertas
-
-#### Gráficos e Análise de Preços
-- ✅ Histórico visual de preços
-- ✅ Identificação de menor/maior preço
-- ✅ Comparação de preços ao longo do tempo
-- ✅ Até 30 registros por produto
-- ✅ Interface dedicada para gráficos
-
-#### Cache Inteligente
-- ✅ Sistema de cache com TTL de 1 hora
-- ✅ Respostas instantâneas para buscas recentes
-- ✅ Indicador visual de resultados do cache
-- ✅ Opção de limpar cache manualmente
-- ✅ Economia de requisições às APIs
-
-#### Filtros Avançados
-- ✅ Filtro por frete grátis
-- ✅ Filtro por loja específica
-- ✅ Filtro de preço máximo
-- ✅ Ordenação por preço ou relevância
-- ✅ Combinação de múltiplos filtros
-
-#### Melhorias na Interface
-- ✅ 5 abas organizadas (Buscar, Histórico, Favoritos, Gráficos, Alertas)
-- ✅ Badges visuais (Frete Grátis, Menor Preço)
-- ✅ Cards redesenhados com mais informações
-- ✅ Ícones informativos em todos os lugares
-- ✅ Navegação mais fluida
-
-#### Exportação Melhorada
-- ✅ Timestamp automático nos arquivos CSV
-- ✅ Inclui informação de frete grátis
-- ✅ Formatação otimizada
-
-### 🔧 Melhorias
-
-- Histórico de buscas agora mostra quantidade de resultados
-- Favoritos com data de quando foi salvo
-- Sistema de notificações mais robusto
-- Tratamento de erros aprimorado
-- Performance otimizada
-- Código mais limpo e documentado
-
-### 🐛 Correções
-
-- Corrigido problema com preços duplicados
-- Melhorado parsing de preços do Google Shopping
-- Corrigido erro ao salvar dados sem permissão
-- Melhorado tratamento de conexão instável
+- Removido PyInstaller dos requirements (opcional)
+- Código otimizado para versões mais recentes do Flet
 
 ---
 
-## [4.0.0] - 2024-02-10
+## [5.0.2] - 2024-02-11
 
-### ✨ Novidades
+### 🐛 Correção de Compatibilidade
 
-- Sistema de favoritos persistente
-- Histórico de buscas
-- Exportação para CSV
-- Tema claro/escuro
-- Filtro de preço máximo
-- Interface com Tabs moderna
-- Integração Google Shopping (SerpAPI)
+- **Flet API**: Corrigido erro `Tab.__init__() got an unexpected keyword argument 'text'`
+- **Tabs**: Atualizado para sintaxe do Flet 0.24.x+ usando `tab_content`
+- **Requirements**: Atualizado mínimo do Flet para 0.24.0
 
-### 🔧 Melhorias
+### 📝 Documentação
 
-- Persistência de dados em JSON
-- Interface mais moderna
-- Cards de produtos redesenhados
+- Adicionado `COMPATIBILITY.md` com guia de versões compatíveis
+- Instruções de troubleshooting para problemas de versão
 
 ---
 
-## [3.0.0] - 2024-02-09
+## [5.0.1] - 2024-02-11
 
-### ✨ Novidades
+### 🐛 Correções Críticas
 
-- Integração com Google Shopping
-- Busca simultânea em múltiplas lojas
-- Ordenação de resultados
+- **Navegação entre abas**: Corrigido bug que impedia dados de carregar ao trocar de aba
+- **Parsing de preços**: Corrigido cálculo incorreto de preços do Google Shopping (valores exagerados)
+- **Entry point**: Corrigido comando `cacador-precos` para funcionar após instalação via pip
+- **Perda de dados**: Implementado sistema de backup automático para arquivos corrompidos
+- **Threading**: Corrigido problema de concorrência ao atualizar UI de threads secundárias
+
+### 📝 Melhorias
+
+- Mensagens de erro mais descritivas no console
+- Backup automático de arquivos JSON corrompidos
+- Tratamento robusto de exceções
+
+Veja [BUGFIXES.md](BUGFIXES.md) para detalhes técnicos.
 
 ---
 
-## [2.0.0] - 2024-02-08
-
-### ✨ Novidades
-
-- Interface gráfica com Flet
-- Busca no Mercado Livre
-- Cards visuais de produtos
-
----
-
-## [1.0.0] - 2024-02-07
+## [5.0.0] - 2024-02-10
 
 ### ✨ Lançamento Inicial
 
-- Busca básica via API
-- Linha de comando
-- Exportação simples
+#### Funcionalidades Principais
+
+- Busca simultânea em Mercado Livre e Google Shopping
+- Sistema de favoritos com persistência
+- Alertas de preço com verificação automática
+- Histórico de preços para análise
+- Gráficos de tendência
+- Exportação para CSV
+- Cache inteligente (1 hora)
+
+#### Interface
+
+- 6 abas organizadas (Buscar, Histórico, Favoritos, Gráficos, Alertas, Configurações)
+- Tema claro/escuro
+- Filtros avançados (preço, frete grátis, loja)
+- Badges visuais (menor preço, frete grátis)
+
+#### Configuração
+
+- Tela de configurações integrada
+- Teste de API key dentro do app
+- Sem necessidade de variáveis de ambiente
 
 ---
 
-## 🔮 Próximas Versões
+## Roadmap
 
 ### [5.1.0] - Planejado
 
 - [ ] Notificações por email
-- [ ] Integração com Telegram
-- [ ] Mais gráficos (comparativo entre lojas)
-- [ ] Dark web scraping (Amazon, Shopee)
-- [ ] Sistema de cupons
+- [ ] Mais gráficos de análise
+- [ ] Suporte a mais marketplaces
+- [ ] Testes automatizados
 
-### [6.0.0] - Planejado
+### [6.0.0] - Futuro
 
 - [ ] App mobile (Android/iOS)
 - [ ] Sincronização na nuvem
 - [ ] Compartilhar listas
-- [ ] Comunidade de preços
-- [ ] Cashback integrado
+- [ ] Sistema de cupons
 
 ---
 
 **Legenda:**
-- ✅ Implementado
-- [ ] Planejado
 - 🐛 Correção de bug
-- 🔧 Melhoria
 - ✨ Nova funcionalidade
+- 📝 Documentação
 - 🔒 Segurança
-- 📚 Documentação
+- ⚡ Performance

@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import csv
+import shutil
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import threading
@@ -20,8 +21,12 @@ def load_config():
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
-            pass
+        except json.JSONDecodeError:
+            print(f"AVISO: {CONFIG_FILE} corrompido. Usando padrões.")
+            return {"serpapi_key": os.getenv("SERPAPI_KEY", "")}
+        except Exception as e:
+            print(f"Erro ao carregar config: {e}")
+            return {"serpapi_key": os.getenv("SERPAPI_KEY", "")}
     return {"serpapi_key": os.getenv("SERPAPI_KEY", "")}
 
 def save_config(config):
@@ -39,14 +44,20 @@ def load_data():
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
-            pass
-    return {
-        "history": [],
-        "favorites": [],
-        "price_history": {},
-        "alerts": []
-    }
+        except json.JSONDecodeError as e:
+            print(f"AVISO: Arquivo {DATA_FILE} corrompido. Fazendo backup...")
+            backup_file = f"{DATA_FILE}.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            try:
+                import shutil
+                shutil.copy(DATA_FILE, backup_file)
+                print(f"Backup salvo em: {backup_file}")
+            except:
+                pass
+            return {"history": [], "favorites": [], "price_history": {}, "alerts": []}
+        except Exception as e:
+            print(f"Erro ao carregar {DATA_FILE}: {e}")
+            return {"history": [], "favorites": [], "price_history": {}, "alerts": []}
+    return {"history": [], "favorites": [], "price_history": {}, "alerts": []}
 
 def save_data(data):
     try:
@@ -60,8 +71,12 @@ def load_cache():
         try:
             with open(CACHE_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except:
-            pass
+        except json.JSONDecodeError:
+            print(f"AVISO: Cache corrompido. Limpando...")
+            return {}
+        except Exception as e:
+            print(f"Erro ao carregar cache: {e}")
+            return {}
     return {}
 
 def save_cache(cache):
@@ -200,7 +215,9 @@ async def buscar_google_shopping(query: str, max_price: Optional[float] = None, 
             price = item.get("extracted_price") or item.get("price")
             if isinstance(price, str):
                 try:
-                    price = float(''.join(filter(str.isdigit, price.replace(",", ".").replace("R$", ""))))
+                    price_clean = price.replace("R$", "").replace(" ", "").strip()
+                    price_clean = price_clean.replace(".", "").replace(",", ".")
+                    price = float(price_clean)
                 except:
                     continue
             
@@ -241,14 +258,20 @@ def main(page: ft.Page):
     notifications_list = []
     
     def show_notification(message: str):
-        notifications_list.insert(0, {"message": message, "time": datetime.now().strftime("%H:%M")})
-        if len(notifications_list) > 10:
-            notifications_list.pop()
-        page.show_snack_bar(ft.SnackBar(
-            content=ft.Text(message, size=16),
-            bgcolor=ft.colors.GREEN_700,
-            duration=5000
-        ))
+        def _show():
+            notifications_list.insert(0, {"message": message, "time": datetime.now().strftime("%H:%M")})
+            if len(notifications_list) > 10:
+                notifications_list.pop()
+            page.show_snack_bar(ft.SnackBar(
+                content=ft.Text(message, size=16),
+                bgcolor=ft.colors.GREEN_700,
+                duration=5000
+            ))
+        
+        try:
+            page.run_task(_show)
+        except:
+            print(f"Notificação: {message}")
     
     alert_thread = threading.Thread(target=check_price_alerts, args=(show_notification,), daemon=True)
     alert_thread.start()
@@ -258,12 +281,12 @@ def main(page: ft.Page):
         animation_duration=300,
         expand=True,
         tabs=[
-            ft.Tab(text="Buscar", icon=ft.Icons.SEARCH),
-            ft.Tab(text="Histórico", icon=ft.Icons.HISTORY),
-            ft.Tab(text="Favoritos", icon=ft.Icons.FAVORITE),
-            ft.Tab(text="Gráficos", icon=ft.Icons.ANALYTICS),
-            ft.Tab(text="Alertas", icon=ft.Icons.NOTIFICATIONS),
-            ft.Tab(text="Configurações", icon=ft.Icons.SETTINGS),
+            ft.Tab(text="Buscar", icon=ft.icons.SEARCH),
+            ft.Tab(text="Histórico", icon=ft.icons.HISTORY),
+            ft.Tab(text="Favoritos", icon=ft.icons.FAVORITE),
+            ft.Tab(text="Gráficos", icon=ft.icons.ANALYTICS),
+            ft.Tab(text="Alertas", icon=ft.icons.NOTIFICATIONS),
+            ft.Tab(text="Configurações", icon=ft.icons.SETTINGS),
         ]
     )
     
@@ -271,7 +294,7 @@ def main(page: ft.Page):
         label="Produto (ex: rtx 5060, iphone 15)",
         expand=True,
         autofocus=True,
-        prefix_icon=ft.Icons.SHOPPING_CART
+        prefix_icon=ft.icons.SHOPPING_CART
     )
     txt_preco_max = ft.TextField(
         label="Preço máximo",
@@ -414,14 +437,14 @@ def main(page: ft.Page):
                             width=80,
                             height=80,
                             fit=ft.ImageFit.CONTAIN
-                        ) if item.get("imagem") else ft.Icon(ft.Icons.SHOPPING_CART, size=60),
+                        ) if item.get("imagem") else ft.Icon(ft.icons.SHOPPING_CART, size=60),
                         ft.Column([
                             ft.Text(item["titulo"], size=14, weight=ft.FontWeight.W_500, max_lines=2),
                             ft.Text(f"{item['loja']}", color=ft.colors.BLUE_400, size=12),
                             ft.Row(badges, spacing=5) if badges else ft.Container()
                         ], expand=True, spacing=4),
                         ft.IconButton(
-                            icon=ft.Icons.FAVORITE if is_fav else ft.Icons.FAVORITE_BORDER,
+                            icon=ft.icons.FAVORITE if is_fav else ft.icons.FAVORITE_BORDER,
                             icon_color=ft.colors.RED_400,
                             on_click=fav_click,
                             tooltip="Favoritar"
@@ -437,7 +460,7 @@ def main(page: ft.Page):
                         ),
                         ft.ElevatedButton(
                             "Ver oferta",
-                            icon=ft.Icons.OPEN_IN_NEW,
+                            icon=ft.icons.OPEN_IN_NEW,
                             on_click=lambda _, link=item["link"]: page.launch_url(link)
                         )
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -464,7 +487,7 @@ def main(page: ft.Page):
             historico_view.controls.append(
                 ft.Card(
                     content=ft.ListTile(
-                        leading=ft.Icon(ft.Icons.SEARCH, color=ft.colors.BLUE_400),
+                        leading=ft.Icon(ft.icons.SEARCH, color=ft.colors.BLUE_400),
                         title=ft.Text(h["query"], weight=ft.FontWeight.BOLD),
                         subtitle=ft.Text(f"{h['date']} • {h.get('results', 0)} resultados"),
                         on_click=lambda e, q=h["query"]: (
@@ -474,7 +497,7 @@ def main(page: ft.Page):
                             asyncio.create_task(buscar())
                         ),
                         trailing=ft.IconButton(
-                            icon=ft.Icons.DELETE_OUTLINE,
+                            icon=ft.icons.DELETE_OUTLINE,
                             on_click=lambda e, hh=h: (
                                 data["history"].remove(hh),
                                 save_data(data),
@@ -490,7 +513,7 @@ def main(page: ft.Page):
         ft.Row([
             ft.Text("Histórico de Buscas", size=20, weight=ft.FontWeight.BOLD),
             ft.IconButton(
-                icon=ft.Icons.DELETE_SWEEP,
+                icon=ft.icons.DELETE_SWEEP,
                 tooltip="Limpar histórico",
                 on_click=lambda e: (
                     data.__setitem__("history", []),
@@ -510,7 +533,7 @@ def main(page: ft.Page):
             favoritos_view.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        ft.Icon(ft.Icons.FAVORITE_BORDER, size=80, color=ft.colors.GREY_500),
+                        ft.Icon(ft.icons.FAVORITE_BORDER, size=80, color=ft.colors.GREY_500),
                         ft.Text("Nenhum favorito", size=18, color=ft.colors.GREY_500)
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                     alignment=ft.alignment.center,
@@ -526,7 +549,7 @@ def main(page: ft.Page):
         ft.Row([
             ft.Text("Favoritos", size=20, weight=ft.FontWeight.BOLD),
             ft.IconButton(
-                icon=ft.Icons.REFRESH,
+                icon=ft.icons.REFRESH,
                 tooltip="Atualizar",
                 on_click=lambda e: atualizar_favoritos()
             )
@@ -607,7 +630,7 @@ def main(page: ft.Page):
         ft.Row([
             ft.Text("Análise de Preços", size=20, weight=ft.FontWeight.BOLD),
             ft.IconButton(
-                icon=ft.Icons.REFRESH,
+                icon=ft.icons.REFRESH,
                 tooltip="Atualizar",
                 on_click=lambda e: atualizar_graficos()
             )
@@ -684,7 +707,7 @@ def main(page: ft.Page):
                         content=ft.Container(
                             content=ft.Row([
                                 ft.Icon(
-                                    ft.Icons.NOTIFICATIONS_ACTIVE if alert["enabled"] else ft.Icons.NOTIFICATIONS_OFF,
+                                    ft.icons.NOTIFICATIONS_ACTIVE if alert["enabled"] else ft.icons.NOTIFICATIONS_OFF,
                                     color=ft.colors.ORANGE_400 if alert["enabled"] else ft.colors.GREY_400
                                 ),
                                 ft.Column([
@@ -696,7 +719,7 @@ def main(page: ft.Page):
                                     )
                                 ], expand=True),
                                 ft.Switch(value=alert["enabled"], on_change=toggle_alerta),
-                                ft.IconButton(icon=ft.Icons.DELETE, on_click=remover_alerta)
+                                ft.IconButton(icon=ft.icons.DELETE, on_click=remover_alerta)
                             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                             padding=12
                         )
@@ -707,7 +730,7 @@ def main(page: ft.Page):
                     ft.Card(
                         content=ft.Container(
                             content=ft.Row([
-                                ft.Icon(ft.Icons.ADD_ALERT, color=ft.colors.GREY_400),
+                                ft.Icon(ft.icons.ADD_ALERT, color=ft.colors.GREY_400),
                                 ft.Column([
                                     ft.Text(fav["titulo"][:60], size=14, weight=ft.FontWeight.BOLD),
                                     ft.Text("Sem alerta", size=12, color=ft.colors.GREY_400)
@@ -725,7 +748,7 @@ def main(page: ft.Page):
         ft.Row([
             ft.Text("Alertas de Preço", size=20, weight=ft.FontWeight.BOLD),
             ft.IconButton(
-                icon=ft.Icons.REFRESH,
+                icon=ft.icons.REFRESH,
                 tooltip="Atualizar",
                 on_click=lambda e: atualizar_alertas()
             )
@@ -811,7 +834,7 @@ def main(page: ft.Page):
         ft.Text(f"Validade do cache: {CACHE_TTL // 60} minutos", size=14),
         ft.ElevatedButton(
             "Limpar cache",
-            icon=ft.Icons.CLEANING_SERVICES,
+            icon=ft.icons.CLEANING_SERVICES,
             on_click=lambda e: (
                 cache.clear(),
                 save_cache(cache),
@@ -825,14 +848,6 @@ def main(page: ft.Page):
         ft.TextButton("GitHub", on_click=lambda e: page.launch_url("https://github.com/seu-usuario/cacador-precos"))
     ], expand=True, spacing=15, scroll=ft.ScrollMode.AUTO)
     
-    tabs.on_change = lambda e: (
-        atualizar_historico() if tabs.selected_index == 1 else
-        atualizar_favoritos() if tabs.selected_index == 2 else
-        atualizar_graficos() if tabs.selected_index == 3 else
-        atualizar_alertas() if tabs.selected_index == 4 else
-        None
-    )
-    
     content_container = ft.Container(expand=True)
     
     def update_tab_content():
@@ -840,12 +855,16 @@ def main(page: ft.Page):
             content_container.content = busca_tab
         elif tabs.selected_index == 1:
             content_container.content = historico_tab
+            atualizar_historico()
         elif tabs.selected_index == 2:
             content_container.content = favoritos_tab
+            atualizar_favoritos()
         elif tabs.selected_index == 3:
             content_container.content = graficos_tab
+            atualizar_graficos()
         elif tabs.selected_index == 4:
             content_container.content = alertas_tab
+            atualizar_alertas()
         elif tabs.selected_index == 5:
             content_container.content = config_tab
         page.update()
@@ -879,12 +898,12 @@ def main(page: ft.Page):
         bgcolor=ft.colors.SURFACE_VARIANT,
         actions=[
             ft.IconButton(
-                icon=ft.Icons.FILE_DOWNLOAD,
+                icon=ft.icons.FILE_DOWNLOAD,
                 tooltip="Exportar CSV",
                 on_click=exportar_csv
             ),
             ft.IconButton(
-                icon=ft.Icons.BRIGHTNESS_6,
+                icon=ft.icons.BRIGHTNESS_6,
                 tooltip="Tema",
                 on_click=lambda e: (
                     setattr(page, "theme_mode", ft.ThemeMode.LIGHT if page.theme_mode == ft.ThemeMode.DARK else ft.ThemeMode.DARK),
@@ -903,5 +922,8 @@ def main(page: ft.Page):
     
     txt_busca.on_submit = buscar
 
+def run_app():
+    ft.run(target=main)
+
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.run(target=main)
